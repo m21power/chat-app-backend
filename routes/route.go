@@ -1,6 +1,7 @@
 package routes
 
 import (
+	middleware "chat-app/Auth"
 	userusecase "chat-app/application/usecases"
 	database "chat-app/infrastructure/database"
 	userrepository "chat-app/infrastructure/repository"
@@ -31,16 +32,22 @@ func (r *Router) RegisterRoute(){
 	// 	log.Fatal(err)
 	// }
 	// fmt.Println("Database migrated successfully")
+	
+	_ : middleware.RoleMiddleware("ADMIN")
+	_ = middleware.RoleMiddleware("USER")
+	both := middleware.RoleMiddleware("ADMIN","USER")
+
 	userRepo := userrepository.NewUserRepository(db)
 	userUsecase := userusecase.NewUserUsecase(userRepo)
 	userHandler := handler.NewUserHandler(userUsecase)
 	baseRoutes := r.route.PathPrefix("/api/v1").Subrouter()
-
-	baseRoutes.HandleFunc("/create-user",userHandler.CreateUser).Methods("POST")
-	baseRoutes.HandleFunc("/get-user-by-id/{id}",userHandler.GetUserByID).Methods("GET")
-	baseRoutes.HandleFunc("/get-user-by-phone_number/{phoneNumber}",userHandler.GetUserByPhoneNumber).Methods("GET")
-	baseRoutes.HandleFunc("/update-user/{id}",userHandler.UpdateUser).Methods("PUT")
-	baseRoutes.HandleFunc("/delete-user/{id}",userHandler.DeleteUser).Methods("DELETE")
+	
+	baseRoutes.Handle("/login",http.HandlerFunc(userHandler.Login)).Methods("POST")
+	baseRoutes.Handle("/create-user",http.HandlerFunc(userHandler.CreateUser)).Methods("POST")
+	baseRoutes.Handle("/get-user-by-id/{id}",both(http.HandlerFunc(userHandler.GetUserByID))).Methods("GET")
+	baseRoutes.Handle("/get-user-by-phone_number/{phoneNumber}",both(http.HandlerFunc(userHandler.GetUserByPhoneNumber))).Methods("GET")
+	baseRoutes.Handle("/update-user/{id}",both(http.HandlerFunc(userHandler.UpdateUser))).Methods("PUT")
+	baseRoutes.Handle("/delete-user/{id}",both(http.HandlerFunc(userHandler.DeleteUser))).Methods("DELETE")
 }
 func (r *Router) Run(addr string, router *mux.Router) error {
 	log.Println("Server running on port: ", addr)

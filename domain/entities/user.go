@@ -1,10 +1,15 @@
 package domain
 
 import "time"
-
+type Role string
+const(
+	Admin Role = "ADMIN"
+	user Role = "USER"
+)
 type User struct{
 	ID uint `gorm:"primaryKey;autoincrement" json:"id"`
 	Name string `gorm:"column:name;type:varchar(255);not null" json:"name"`
+	Role Role `gorm:"column:role;type:varchar(255);not null" json:"role"`
 	Username string `gorm:"column:username;type:varchar(255);unique" json:"username"`
 	Password string `gorm:"column:password;type:varchar(255);not null" json:"password"`
 	PhoneNumber string `gorm:"column:phone_number;type:varchar(255);unique;not null" json:"phone_number"`

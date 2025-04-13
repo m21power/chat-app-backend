@@ -1,10 +1,12 @@
 package transport
 
 import (
+	auth "chat-app/Auth"
 	domain "chat-app/domain/contracts/usecases"
 	entities "chat-app/domain/entities"
 	"chat-app/util"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -18,7 +20,33 @@ type UserHandler struct{
 func NewUserHandler(iuserusecase domain.IUserUsecase) UserHandler{
 	return UserHandler{iuserusecase: iuserusecase}
 }
+func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request){
+	user := new(entities.User)
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err !=nil{
+		util.WriteError(w,http.StatusBadRequest,err)
+		return
+	}
+	existingUser,err := h.iuserusecase.Login(user)
+	if err != nil{
+		util.WriteError(w,http.StatusBadRequest,err)
+		return
+	}
 
+	token, err :=auth.CreateToken(existingUser.ID,string(existingUser.Role))
+	if err != nil{
+		util.WriteError(w,http.StatusBadRequest,err)
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+	})
+	util.WriteJSON(w,http.StatusOK,map[string]string{"token":token})
+}
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request){
 	user:= new(entities.User)
 	err :=json.NewDecoder(r.Body).Decode(&user)
@@ -63,6 +91,12 @@ func (h *UserHandler) GetUserByPhoneNumber(w http.ResponseWriter, r *http.Reques
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request){
 	value :=mux.Vars(r)
 	id := value["id"]
+	userID := r.Context().Value(auth.ContextUserID).(string)
+	userRole := r.Context().Value(auth.ContextUserRole).(string)
+	if userID != id && userRole != "ADMIN"{
+		util.WriteError(w,http.StatusUnauthorized,fmt.Errorf("Unauthorized"))
+		return
+	}
 	Id,err := strconv.Atoi(id)
 	if err !=nil{
 		util.WriteError(w,http.StatusBadRequest,err)
@@ -90,6 +124,12 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request){
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request){
 	value := mux.Vars(r)
 	id := value["id"]
+	userID := r.Context().Value(auth.ContextUserID).(string)
+	userRole := r.Context().Value(auth.ContextUserRole).(string)
+	if userID != id && userRole != "ADMIN"{
+		util.WriteError(w,http.StatusUnauthorized,fmt.Errorf("Unauthorized"))
+		return
+	}
 	Id,err := strconv.Atoi(id)
 	if err != nil{
 		util.WriteError(w,http.StatusBadRequest,err)

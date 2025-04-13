@@ -5,6 +5,7 @@ import (
 	entities "chat-app/domain/entities"
 	"fmt"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -15,7 +16,22 @@ func NewUserRepository(db *gorm.DB) iuserrepository.IUserRepository {
 	return &UserRepository{db: db}
 }
 func (r *UserRepository) CreateUser(user *entities.User) error {
+	user.Role = "USER"
 	return r.db.Create(user).Error
+}
+func (r *UserRepository) Login(user *entities.User) (*entities.User,error) {
+	existingUser, err := r.GetUserByPhoneNumber(user.PhoneNumber)
+	if err != nil {
+		return nil, err
+	}
+	if existingUser == nil {
+		return nil, fmt.Errorf("user not found")
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(user.Password))
+	if err != nil {
+		return nil, fmt.Errorf("invalid password")
+	}
+	return existingUser, nil
 }
 
 func (r *UserRepository) DeleteUser(id uint) error {

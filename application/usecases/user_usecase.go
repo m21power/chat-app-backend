@@ -16,6 +16,9 @@ func NewUserUsecase(repository iuserrepository.IUserRepository) iuserusecase.IUs
 	return &UserUsecase{repository: repository}
 }
 
+func (u *UserUsecase) Login(user *entities.User) (*entities.User,error){
+	return u.repository.Login(user)
+}
 func (u *UserUsecase) CreateUser(user *entities.User) error{
 	hashedPassword,err := hashPassword(user.Password)
 	if err != nil{

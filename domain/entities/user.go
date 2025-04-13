@@ -10,7 +10,7 @@ type User struct{
 	ID uint `gorm:"primaryKey;autoincrement" json:"id"`
 	Name string `gorm:"column:name;type:varchar(255);not null" json:"name"`
 	Role Role `gorm:"column:role;type:varchar(255);not null" json:"role"`
-	Username string `gorm:"column:username;type:varchar(255);unique" json:"username"`
+	Username string `gorm:"column:username;type:varchar(255)" json:"username"`
 	Password string `gorm:"column:password;type:varchar(255);not null" json:"password"`
 	PhoneNumber string `gorm:"column:phone_number;type:varchar(255);unique;not null" json:"phone_number"`
 	ProfilePicture string `gorm:"column:profile_picture;type:varchar(255)" json:"profile_picture"`

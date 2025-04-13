@@ -1,7 +1,9 @@
 package auth
 
 import (
+	"chat-app/util"
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -30,7 +32,7 @@ func RoleMiddleware(requiredRoles ...string) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				util.WriteError(w, http.StatusUnauthorized, fmt.Errorf("unauthorized"))
 				return
 			}
 
@@ -38,14 +40,14 @@ func RoleMiddleware(requiredRoles ...string) func(http.Handler) http.Handler {
 
 			_, claims, err := VerifyToken(tokenString)
 			if err != nil {
-				http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+				util.WriteError(w, http.StatusUnauthorized, err)
 				return
 			}
 
 			userID := claims.Subject
 			roleSlice := claims.Audience
 			if len(roleSlice) == 0 {
-				http.Error(w, "Missing role in token", http.StatusForbidden)
+				util.WriteError(w, http.StatusForbidden, fmt.Errorf("missing role in token"))
 				return
 			}
 			userRole := roleSlice[0]

@@ -47,7 +47,7 @@ func (h *MessageHandler) CreateMessage(w http.ResponseWriter, r *http.Request) {
 	util.WriteJSON(w, http.StatusOK, createdMessage)
 }
 func (h *MessageHandler) GetMessageByID(w http.ResponseWriter, r *http.Request) {
-	// Implementation for creating a message
+	// get message by id
 }
 func (h *MessageHandler) GetMessagesByConversationID(w http.ResponseWriter, r *http.Request) {
 	value := mux.Vars(r)
